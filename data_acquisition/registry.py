@@ -55,11 +55,11 @@ class Registry:
 
     """
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str):
         self._name: str = name
         self._obj_map: Dict[str, Callable] = {}
 
-    def _do_register(self, name: str, obj: Callable) -> None:
+    def _do_register(self, name: str, obj: Callable):
         assert (
             name not in self._obj_map
         ), "An object named '{}' was already registered in '{}' registry!".format(

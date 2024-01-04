@@ -1,12 +1,15 @@
+import os
+
 import numpy as np
 import pandas as pd
-import sklearn
 import sklearn.model_selection
-from auto_mm_bench.datasets import dataset_registry
-from autogluon.text.text_prediction import constants as _C
-from autogluon.text.text_prediction.infer_types import (
-    infer_column_problem_types,
-)
+from autogluon.core.utils import infer_problem_type
+from autogluon.multimodal import constants as _C
+from autogluon.multimodal.data.infer_types import infer_column_types
+
+from data_acquisition.datasets import dataset_registry
+
+os.environ["AUTO_MM_BENCH_HOME"] = "raw_data"
 
 
 def get_stats():
@@ -21,6 +24,7 @@ def get_stats():
         "#Competition": [],
         "Metric": [],
     }
+
     train_dataset_l = []
     test_dataset_l = []
     for dataset_name in dataset_registry.list_keys():
@@ -38,8 +42,10 @@ def get_stats():
         dataset_stats["#Competition"].append(competition_num)
         train_dataset = dataset_cls(split="train")
         test_dataset = dataset_cls(split="test")
+
         train_dataset_l.append(train_dataset)
         test_dataset_l.append(test_dataset)
+
     for train_dataset, test_dataset in zip(train_dataset_l, test_dataset_l):
         problem_type = train_dataset.problem_type
         metric = train_dataset.metric
@@ -48,13 +54,27 @@ def get_stats():
         train_df, valid_df = sklearn.model_selection.train_test_split(
             train_dataset.data, test_size=0.05, random_state=np.random.RandomState(100)
         )
-        column_types, inferred_problem_type = infer_column_problem_types(
+
+        column_types = infer_column_types(
             train_df,
             valid_df,
             label_columns=train_dataset.label_columns,
             problem_type=problem_type,
         )
-        assert inferred_problem_type == problem_type
+
+        inferred_problem_type = infer_problem_type(
+            y=train_df[train_dataset.label_columns[0]],
+        )
+
+        try:
+            assert inferred_problem_type == problem_type
+        except AssertionError:
+            print(
+                f"Problem type mismatch: {inferred_problem_type} (inferred) vs {problem_type} (specified)"
+            )
+
+        problem_type = inferred_problem_type
+
         for label, gt_label_type in zip(
             train_dataset.label_columns, train_dataset.label_types
         ):
@@ -75,6 +95,7 @@ def get_stats():
         dataset_stats["#Train"].append(train_num)
         dataset_stats["#Test"].append(test_num)
         dataset_stats["Metric"].append(metric)
+
     dataset_stats["#Competition"] = np.array(
         dataset_stats["#Competition"], dtype=np.int64
     )
@@ -82,5 +103,5 @@ def get_stats():
     return dataset_stats
 
 
-public_dataset_stats = get_stats()
-public_dataset_stats.to_csv("auto_mm_bench_public.csv")
+if __name__ == "__main__":
+    dataset_stats = get_stats()

@@ -1,5 +1,6 @@
 import os
 import abc
+from typing import List, Literal
 
 import numpy as np
 import pandas as pd
@@ -49,31 +50,33 @@ def create_dataset(name, *args, **kwargs):
 class BaseMultiModalDataset(abc.ABC):
     @property
     @abc.abstractmethod
-    def feature_columns(self):
+    def feature_columns(self) -> List[str]:
         pass
 
     @property
     @abc.abstractmethod
-    def label_columns(self):
+    def label_columns(self) -> List[str]:
         pass
 
     @property
-    def label_types(self):
+    def label_types(self) -> List[str]:
         raise NotImplementedError
 
     @property
     @abc.abstractmethod
-    def data(self):
+    def data(self) -> pd.DataFrame:
         pass
 
     @property
     @abc.abstractmethod
-    def metric(self):
+    def metric(self) -> str:
         pass
 
     @property
     @abc.abstractmethod
-    def problem_type(self):
+    def problem_type(
+        self,
+    ) -> Literal["classification", "regression", "binary", "multiclass"]:
         pass
 
 
@@ -1108,10 +1111,6 @@ class NewsChannel(BaseMultiModalDataset):
     @classmethod
     def splits(cls):
         return cls._INFO.keys()
-
-    @property
-    def data(self):
-        return self._data
 
     @property
     def label_columns(self):

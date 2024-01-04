@@ -29,7 +29,7 @@ for verification in all_data["host_verifications"]:
         all_verifications.extend(dat)
 all_verifications_set = set(all_verifications)
 additional_cols = {
-    f"host_verifications_{method}": np.zeros((len(all_data),), dtype=np.bool)
+    f"host_verifications_{method}": np.zeros((len(all_data),), dtype=np.bool_)
     for method in all_verifications_set
 }
 
