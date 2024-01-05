@@ -1,21 +1,23 @@
-from typing import Dict, List
+import os
 import pickle
-
+from typing import Dict, List
 from pathlib import Path
 
 import pandas as pd
 
-from data_processing.prepare_datasets import (
+from data_acquisition.datasets import create_dataset
+from data_processing.utils import (
     infer_column_type,
-    join_colnames_to_lowercase,
     drop_unnamed_columns,
+    join_colnames_to_lowercase,
 )
 
 if __name__ == "__main__":
+    os.environ["AUTO_MM_BENCH_HOME"] = "raw_data"
+
     raw_data_path = Path("raw_data")
 
     datasets_path = raw_data_path / "datasets"
-
     df_stats = pd.read_csv(raw_data_path / "dataset_stats.csv")
 
     selected_datasets = df_stats[
@@ -29,19 +31,21 @@ if __name__ == "__main__":
     for dataset_name in selected_datasets:
         print(dataset_name)
 
-        if dataset_name == "melbourne_airbnb":
-            dataset_name = "airbnb_melbourne"
-
-        if dataset_name == "bookprice_prediction":
-            dataset_name = "bookprice"
-
-        try:
-            df = pd.read_csv(datasets_path / f"{dataset_name}/train.pq")
-        except UnicodeDecodeError:
-            df = pd.read_parquet(datasets_path / f"{dataset_name}/train.pq")
+        dataset = create_dataset(dataset_name)
+        # this can be done by simply reading the train set, but I will use
+        # the 'create_dataset' function
+        # functionality like 'create_dataset' are not very well coded in the
+        # original code (imo...)
+        df = dataset.data
 
         df = drop_unnamed_columns(join_colnames_to_lowercase(df))
-        col_type_per_dataset[dataset_name] = infer_column_type(df)
+        col_types = infer_column_type(df)
+
+        assert len(dataset.label_columns) == 1
+        target_col = "_".join(dataset.label_columns[0].split()).lower()
+        col_types["target"] = [target_col]  # List to avoid type error
+
+        col_type_per_dataset[dataset_name] = col_types
 
     # json would probably be better...but for now pickle is fine
     with open(raw_data_path / "selected_datasets_col_types.pkl", "wb") as f:
