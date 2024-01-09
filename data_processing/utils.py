@@ -111,7 +111,9 @@ def text_condition(
 
 def cols_to_lowercase_and_strip(df: pd.DataFrame, cols: List[str]) -> pd.DataFrame:
     for c in cols:
-        df[c] = df[c].str.lower().str.strip()
+        c_series = df[c].astype(str).str.lower().str.strip()
+        c_series[np.where(df[c].isna())[0]] = None
+        df[c] = c_series
     return df
 
 
