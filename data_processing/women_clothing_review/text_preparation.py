@@ -44,7 +44,7 @@ class WomenClothingReviewTextPreparer:
             tokenized_text = self.tokenizer.process_all(df[col].tolist())
             if self.with_bigrams:
                 tokenized_text = BigramTokenizer().process_all(tokenized_text)
-            df[col + "_tok"] = tokenized_text
+            df[col + "_tokenized"] = tokenized_text
         return df
 
     def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
